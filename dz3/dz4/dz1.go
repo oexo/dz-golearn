@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"time"
+	"unicode"
 )
 
 /*
@@ -20,28 +21,55 @@ Word count: 3
 
 */
 
-var String chan string
+// подсчитывает количество слов в строке
 
-func PrintFromChannel(c chan string, t *string) {
-	fmt.Println(*t)
-	c <- *t
+func wordCount(s string) int {
+	count := 0
+	inWord := false
+	for _, rune := range s {
+		if unicode.IsSpace(rune) || unicode.IsPunct(rune) {
+			inWord = false
+		} else if !inWord {
+			inWord = true
+			count++
+		}
+	}
+	return count
 }
 
 func main() {
-	fmt.Println("vim-go")
-	fmt.Println(String)
-
 	c := make(chan string)
-	fmt.Println(c)
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter text: ")
-	text, _ := reader.ReadString('\n')
-	fmt.Println(text)
-	go PrintFromChannel(c, &text)
+	defer close(c)
+
+	text := ""
+	strings := make([]string, 0)
+
+	//бесконечно читаем канал
+	go func() {
+		for {
+			strings = append(strings, <-c)
+		}
+	}()
+
+	// бесконечно пишем в канал из stdin пок не получим слово "Result\n"
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Enter text: ")
+		text, _ = reader.ReadString('\n')
+		if text == "Result\n" {
+			break
+		}
+		go func() { c <- text }()
+	}
+
+	fmt.Println(strings)
+
+	// выводим результат
+	fmt.Println("Результат:")
+	for _, v := range strings {
+		go func(v string) {
+			fmt.Println("string:", v, "Word count:", wordCount(v))
+		}(v)
+	}
 	time.Sleep(2 * time.Second)
-	fmt.Println(c)
-
-	text2 := <-c
-	fmt.Println(text2)
-
 }
