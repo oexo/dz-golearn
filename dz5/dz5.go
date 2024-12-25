@@ -35,10 +35,16 @@ import (
 
 type Student struct {
 	FullName         string `json:"name"`
-	MathScore        int    `json:math`
-	InformaticsScore int    `json:informatics`
-	EnglishScore     int    `json:engilsh`
+	MathScore        int    `json:"math"`
+	InformaticsScore int    `json:"informatics"`
+	EnglishScore     int    `json:"english"`
 }
+
+type Students struct {
+	Students []Student
+}
+
+var students Students
 
 func postApply(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -47,6 +53,7 @@ func postApply(w http.ResponseWriter, r *http.Request) {
 	}
 
 	student := &Student{}
+
 	err := json.NewDecoder(r.Body).Decode(student)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -55,6 +62,13 @@ func postApply(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("got student:", student)
 	w.WriteHeader(http.StatusCreated)
+	if student.MathScore+student.InformaticsScore+student.EnglishScore < 14 {
+		fmt.Println(student.FullName, "not accepted")
+	} else {
+		fmt.Println(student.FullName, "accepted")
+		students.Students = append(students.Students, *student)
+	}
+	fmt.Println("Accepted students is:", students)
 
 }
 
