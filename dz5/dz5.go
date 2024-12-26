@@ -68,20 +68,31 @@ func postApply(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(student.FullName, "accepted")
 		students.Students = append(students.Students, *student)
 	}
-	fmt.Println("Accepted students is:", students)
+}
 
+func getAdmitted(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	for _, person := range students.Students {
+		jsonData, err := json.Marshal(person)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(jsonData))
+
+	}
 }
 
 func main() {
 	http.HandleFunc("/apply", postApply)
-
+	http.HandleFunc("/admitted", getAdmitted)
 	err := http.ListenAndServe(":8080", nil)
-
 	if errors.Is(err, http.ErrServerClosed) {
 		fmt.Printf("server closed\n")
 	} else if err != nil {
 		fmt.Printf("error starting server: %s\n", err)
 		os.Exit(1)
 	}
-
 }
